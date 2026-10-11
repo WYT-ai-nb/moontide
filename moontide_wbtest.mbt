@@ -121,3 +121,85 @@ test "markdown report renders" {
   @test.assert_eq(text.contains("示例港"), true)
   @test.assert_eq(text.contains("高低潮"), true)
 }
+
+test "tide rate changes sign across the curve" {
+  let demo = find_station("demo").unwrap()
+  let start = julian_day_utc(2026, 10, 12, 0.0)
+  let first = tide_rate(demo, start, 0.1)
+  let later = tide_rate(demo, start + 0.25, 0.1)
+  @test.assert_eq(close(first - later, 0.0, 1.0e-12), false)
+}
+
+test "sample series and statistics" {
+  let demo = find_station("demo").unwrap()
+  let start = julian_day_utc(2026, 10, 12, 0.0)
+  let samples = sample_series(demo, start, 24.0, 1.0)
+  let stats = compute_stats(samples)
+  @test.assert_eq(samples.length(), 25)
+  @test.assert_eq(stats.range > 0.0, true)
+  @test.assert_eq(stats.max_flood_rate >= stats.max_ebb_rate, true)
+}
+
+test "find next extreme returns a result" {
+  let demo = find_station("demo").unwrap()
+  let start = julian_day_utc(2026, 10, 12, 0.0)
+  match find_next_extreme(demo, start, 12.0, 0.1) {
+    Some(extreme) => @test.assert_eq(extreme.time_jd >= start, true)
+    None => @test.fail("expected an extreme")
+  }
+}
+
+test "merge windows combines overlap" {
+  let a = { start_jd: 1.0, end_jd: 2.0, label: "a" }
+  let b = { start_jd: 1.5, end_jd: 3.0, label: "b" }
+  let c = { start_jd: 4.0, end_jd: 5.0, label: "c" }
+  let merged = merge_windows([a, b, c])
+  @test.assert_eq(merged.length(), 2)
+  @test.assert_eq(close(merged[0].end_jd, 3.0, 1.0e-9), true)
+}
+
+test "station search finds a nearby port" {
+  let nearest = nearest_station(36.0, 120.0).unwrap()
+  @test.assert_eq(nearest.id, "demo")
+  @test.assert_eq(distance_km(36.0, 120.0, 36.0, 120.0), 0.0)
+}
+
+test "station validation finds missing core constituents" {
+  let station = {
+    id: "minimal",
+    name: "最小站",
+    lat: 30.0,
+    lon: 120.0,
+    datum: 0.0,
+    components: [harmonic_of("K1", 0.2, 180.0)],
+    source: "test",
+  }
+  let issues = validate_station(station)
+  @test.assert_eq(issues.any(issue => issue.field == "M2"), true)
+  @test.assert_eq(issues.any(issue => issue.field == "S2"), true)
+}
+
+test "csv export includes a header" {
+  let demo = find_station("demo").unwrap()
+  let start = julian_day_utc(2026, 10, 12, 0.0)
+  let samples = sample_series(demo, start, 2.0, 1.0)
+  let text = samples_to_csv(samples, 8.0)
+  @test.assert_eq(text.contains("time,height_m"), true)
+}
+
+test "ics export includes calendar events" {
+  let demo = find_station("demo").unwrap()
+  let p = predict(demo, { year: 2026, month: 10, day: 12, local_hour: 0.0 }, 8.0, 24.0)
+  let text = extremes_to_ics(p.station, p.extremes, p.tz)
+  @test.assert_eq(text.contains("BEGIN:VCALENDAR"), true)
+  @test.assert_eq(text.contains("BEGIN:VEVENT"), true)
+}
+
+test "plans expose ranked activity windows" {
+  let demo = find_station("demo").unwrap()
+  let p = predict(demo, { year: 2026, month: 10, day: 12, local_hour: 0.0 }, 8.0, 48.0)
+  let plans = plans_for(p)
+  @test.assert_eq(plans.length(), 3)
+  @test.assert_eq(plans[0].activity, "赶海")
+  @test.assert_eq(plans[0].windows.length() > 0, true)
+}
