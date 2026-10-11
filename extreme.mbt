@@ -1,5 +1,5 @@
 /// A tidal extreme: a local maximum or minimum of the tide curve.
-pub enum ExtremeKind {
+pub(all) enum ExtremeKind {
   High
   Low
 } derive(Eq, Debug)
