@@ -1,0 +1,8 @@
+_build/
+.moon/
+.mooncakes/
+*.wasm
+*.exe
+*.o
+*.out
+*.log
