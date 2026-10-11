@@ -1,0 +1,15 @@
+{
+  "id": "qingdao-sample",
+  "name": "青岛示例站",
+  "lat": 36.06,
+  "lon": 120.31,
+  "datum": 0.0,
+  "source": "示例调和常数，正式使用请以当地《潮汐表》为准",
+  "components": [
+    {"name": "M2", "amplitude": 1.35, "phase": 310.0},
+    {"name": "S2", "amplitude": 0.45, "phase": 345.0},
+    {"name": "N2", "amplitude": 0.20, "phase": 290.0},
+    {"name": "K1", "amplitude": 0.28, "phase": 175.0},
+    {"name": "O1", "amplitude": 0.20, "phase": 215.0}
+  ]
+}
