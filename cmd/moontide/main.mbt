@@ -27,7 +27,6 @@ fn print_help() -> Unit {
   println("")
   println("选项:")
   println("  --station <id>        内置站点（demo / qingdao / xiamen）")
-  println("  --station-file <path> 从 JSON 文件加载自定义站点")
   println("  --date <YYYY-MM-DD>   预测起始日期")
   println("  --tz <offset>         UTC 偏移小时数，默认 8")
   println("  --hours <n>           预测时长小时数，默认 24")
@@ -35,31 +34,12 @@ fn print_help() -> Unit {
 }
 
 fn load_station(args : Array[String]) -> @lib.Station? {
-  match find_arg(args, "--station-file") {
-    Some(path) => {
-      let content = try @fs.read_file_to_string(path) catch {
-        _ => {
-          println("无法读取站点文件: \{path}")
-          return None
-        }
-      }
-      match @lib.parse_station_file(content) {
-        Some(s) => Some(s)
-        None => {
-          println("站点文件格式无效: \{path}")
-          None
-        }
-      }
-    }
+  let id = find_arg(args, "--station").unwrap_or("demo")
+  match @lib.find_station(id) {
+    Some(s) => Some(s)
     None => {
-      let id = find_arg(args, "--station").unwrap_or("demo")
-      match @lib.find_station(id) {
-        Some(s) => Some(s)
-        None => {
-          println("未找到内置站点: \{id}")
-          None
-        }
-      }
+      println("未找到内置站点: \{id}")
+      None
     }
   }
 }
