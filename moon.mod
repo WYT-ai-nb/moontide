@@ -13,7 +13,3 @@ keywords = [ "tide", "ocean", "astronomy", "harmonic-analysis", "coastal" ]
 preferred_target = "native"
 
 description = "Local-first tidal prediction for coastal activities, written in MoonBit."
-
-import {
-  "moonbitlang/x@0.5.5",
-}
