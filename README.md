@@ -27,21 +27,19 @@ moon run cmd/moontide -- predict --station demo --date 2026-10-12 --tz 8 --hours
 ```text
 moontide list
 moontide predict --station demo --date 2026-10-12 --tz 8 --hours 24
-moontide predict --station-file myport.json --date 2026-10-12 --format json
 ```
 
 选项：
 
 - `--station <id>`：内置站点 `demo`、`qingdao`、`xiamen`
-- `--station-file <path>`：从 JSON 文件加载自定义站点
 - `--date <YYYY-MM-DD>`：预测起始日期，默认 `2026-10-12`
 - `--tz <offset>`：UTC 偏移小时数，默认 `8`
 - `--hours <n>`：预测时长小时数，默认 `24`
 - `--format <markdown|json>`：输出格式
 
-## 自定义站点
+## 站点数据
 
-站点文件是一个 JSON 对象，`amplitude` 是分潮振幅（米），`phase` 是格林尼治迟角（度），`datum` 是平均海平面：
+`sample/qingdao.json` 展示了站点调和常数的标准 JSON 字段。`amplitude` 是分潮振幅（米），`phase` 是格林尼治迟角（度），`datum` 是平均海平面：
 
 ```json
 {
