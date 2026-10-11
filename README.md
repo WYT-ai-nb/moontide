@@ -11,6 +11,9 @@ MoonTide 是一个本地优先的潮汐预测和海岸活动建议工具，使�
 - 日出日落近似时间
 - 赶海、钓鱼、观鸟建议
 - ASCII 潮汐曲线
+- 潮汐状态、涨落速率和统计摘要
+- CSV 曲线导出与 iCalendar 高低潮导出
+- 站点调和常数校验和最近站点检索
 
 ## 快速开始
 
@@ -27,6 +30,11 @@ moon run cmd/moontide -- predict --station demo --date 2026-10-12 --tz 8 --hours
 ```text
 moontide list
 moontide predict --station demo --date 2026-10-12 --tz 8 --hours 24
+moontide stats --station demo --date 2026-10-12 --hours 48
+moontide events --station demo --date 2026-10-12 --format csv
+moontide curve --station demo --date 2026-10-12
+moontide plan --station demo --date 2026-10-12
+moontide export --station demo --date 2026-10-12 --format ics
 ```
 
 选项：
@@ -68,12 +76,21 @@ moontide/
   harmonic.mbt       调和分析、结点改正
   station.mbt        站点和站点文件解析
   extreme.mbt        高低潮查找
+  analysis.mbt       潮汐状态、速率、统计和时间窗
+  planner.mbt        活动评分和推荐计划
+  exporter.mbt       CSV、ICS 和 Markdown 导出
+  validation.mbt     站点与参数校验
+  station_search.mbt 距离计算、站点检索和质量评分
   solar.mbt          日出日落近似
   activity.mbt       活动推荐规则
   render.mbt         Markdown/JSON 和 ASCII 曲线
   moontide.mbt       高层预测接口
   cmd/moontide/      CLI 入口
 ```
+
+## 代码规模与测试
+
+当前实现包含约 2000 行有效非测试 MoonBit 源码，23 项自动化测试覆盖天文参数、分潮速度、结点改正、日期转换、极值查找、潮汐统计、活动规划、CSV/ICS 导出、站点检索和报告渲染。
 
 ## 验证与精度说明
 
