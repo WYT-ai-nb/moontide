@@ -22,15 +22,20 @@ fn print_help() -> Unit {
   println("")
   println("用法:")
   println("  moontide list")
+  println("  moontide validate --station demo")
   println("  moontide predict --station demo --date 2026-10-12 --tz 8 --hours 24")
-  println("  moontide predict --station-file myport.json --date 2026-10-12 --format json")
+  println("  moontide stats --station demo --date 2026-10-12 --hours 48")
+  println("  moontide events --station demo --date 2026-10-12 --format csv")
+  println("  moontide curve --station demo --date 2026-10-12")
+  println("  moontide plan --station demo --date 2026-10-12")
+  println("  moontide export --station demo --date 2026-10-12 --format ics")
   println("")
   println("选项:")
   println("  --station <id>        内置站点（demo / qingdao / xiamen）")
   println("  --date <YYYY-MM-DD>   预测起始日期")
   println("  --tz <offset>         UTC 偏移小时数，默认 8")
   println("  --hours <n>           预测时长小时数，默认 24")
-  println("  --format <fmt>        markdown（默认）或 json")
+  println("  --format <fmt>        markdown、json、csv 或 ics")
 }
 
 fn load_station(args : Array[String]) -> @lib.Station? {
@@ -44,13 +49,104 @@ fn load_station(args : Array[String]) -> @lib.Station? {
   }
 }
 
+fn load_prediction(args : Array[String]) -> @lib.Prediction? {
+  let station = match load_station(args) {
+    Some(s) => s
+    None => return None
+  }
+  let date = find_arg(args, "--date").unwrap_or("2026-10-12")
+  let tz = parse_double_arg(args, "--tz", 8.0)
+  let hours = parse_double_arg(args, "--hours", 24.0)
+  match @lib.predict_on(station, date, tz, hours) {
+    Some(prediction) => Some(prediction)
+    None => {
+      println("日期格式无效（应为 YYYY-MM-DD 或 YYYY-MM-DD HH:MM）: \{date}")
+      None
+    }
+  }
+}
+
 fn list_stations() -> Unit {
-  println("MoonTide 内置站点")
+  println(@lib.stations_to_markdown(@lib.builtin_stations()))
+}
+
+fn validate_station(args : Array[String]) -> Unit {
+  let station = match load_station(args) {
+    Some(s) => s
+    None => return
+  }
+  let tz = parse_double_arg(args, "--tz", 8.0)
+  let hours = parse_double_arg(args, "--hours", 24.0)
+  let issues = @lib.validate_station(station)
+  issues.append(@lib.validate_timezone(tz))
+  issues.append(@lib.validate_hours(hours))
+  println(@lib.validation_to_markdown(issues))
+}
+
+fn print_stats(args : Array[String]) -> Unit {
+  let prediction = match load_prediction(args) {
+    Some(p) => p
+    None => return
+  }
+  let samples = @lib.sample_series(prediction.station, prediction.start_jd, prediction.duration_hours, 1.0 / 12.0)
+  let stats = @lib.compute_stats(samples)
+  let coefficient = @lib.tide_coefficient(stats.range, @lib.mean_tidal_range(prediction.station))
+  println(@lib.stats_to_markdown(stats, coefficient))
   println("")
-  for s in @lib.builtin_stations() {
-    println("\{@lib.station_id(s)}\t\{@lib.station_name(s)}")
-    println("    位置: \{@lib.format_meters(@lib.station_lat(s))}°, \{@lib.format_meters(@lib.station_lon(s))}°   平均潮差约 \{@lib.format_meters(@lib.mean_tidal_range(s))} m")
-    println("    数据来源: \{@lib.station_source(s)}")
+  println("主导状态: \{@lib.state_label(@lib.dominant_state(samples))}")
+}
+
+fn print_events(args : Array[String]) -> Unit {
+  let prediction = match load_prediction(args) {
+    Some(p) => p
+    None => return
+  }
+  let format = find_arg(args, "--format").unwrap_or("markdown")
+  if format == "csv" {
+    println(@lib.extremes_to_csv(prediction.extremes, prediction.tz))
+  } else if format == "json" {
+    println(@lib.render_json(prediction))
+  } else {
+    for extreme in prediction.extremes {
+      let kind = if extreme.kind == @lib.ExtremeKind::High {
+        "高潮"
+      } else {
+        "低潮"
+      }
+      println("\{@lib.format_local_datetime(extreme.time_jd, prediction.tz)}  \{kind}  \{@lib.format_meters(extreme.height)} m")
+    }
+  }
+}
+
+fn print_curve(args : Array[String]) -> Unit {
+  let prediction = match load_prediction(args) {
+    Some(p) => p
+    None => return
+  }
+  println(@lib.render_curve(prediction.station, prediction.start_jd, prediction.duration_hours, 1.0, prediction.tz))
+}
+
+fn print_plan(args : Array[String]) -> Unit {
+  let prediction = match load_prediction(args) {
+    Some(p) => p
+    None => return
+  }
+  println(@lib.plans_to_markdown(@lib.plans_for(prediction), prediction.tz))
+}
+
+fn export_prediction(args : Array[String]) -> Unit {
+  let prediction = match load_prediction(args) {
+    Some(p) => p
+    None => return
+  }
+  let format = find_arg(args, "--format").unwrap_or("csv")
+  if format == "ics" {
+    println(@lib.extremes_to_ics(prediction.station, prediction.extremes, prediction.tz))
+  } else if format == "json" {
+    println(@lib.render_json(prediction))
+  } else {
+    let samples = @lib.sample_series(prediction.station, prediction.start_jd, prediction.duration_hours, 1.0 / 12.0)
+    println(@lib.samples_to_csv(samples, prediction.tz))
   }
 }
 
@@ -64,27 +160,39 @@ fn main {
     list_stations()
     return
   }
+  if args.contains("validate") {
+    validate_station(args)
+    return
+  }
+  if args.contains("stats") {
+    print_stats(args)
+    return
+  }
+  if args.contains("events") {
+    print_events(args)
+    return
+  }
+  if args.contains("curve") {
+    print_curve(args)
+    return
+  }
+  if args.contains("plan") {
+    print_plan(args)
+    return
+  }
+  if args.contains("export") {
+    export_prediction(args)
+    return
+  }
   if !args.contains("predict") {
     print_help()
     return
   }
-
-  let station = match load_station(args) {
-    Some(s) => s
+  let prediction = match load_prediction(args) {
+    Some(p) => p
     None => return
   }
-  let date = find_arg(args, "--date").unwrap_or("2026-10-12")
-  let tz = parse_double_arg(args, "--tz", 8.0)
-  let hours = parse_double_arg(args, "--hours", 24.0)
   let format = find_arg(args, "--format").unwrap_or("markdown")
-
-  let prediction = match @lib.predict_on(station, date, tz, hours) {
-    Some(p) => p
-    None => {
-      println("日期格式无效（应为 YYYY-MM-DD 或 YYYY-MM-DD HH:MM）: \{date}")
-      return
-    }
-  }
   if format == "json" {
     println(@lib.render_json(prediction))
   } else {
