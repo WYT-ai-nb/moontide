@@ -19,6 +19,9 @@ jobs:
       - name: Verify toolchain
         run: moon version --all
 
+      - name: Update registry index
+        run: moon update
+
       - name: Check
         run: moon check --target wasm-gc
 
