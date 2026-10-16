@@ -37,15 +37,6 @@ pub struct TideWindow {
 } derive(Debug)
 
 ///|
-fn abs_double(value : Double) -> Double {
-  if value < 0.0 {
-    -value
-  } else {
-    value
-  }
-}
-
-///|
 /// Approximate rate of change in meters per hour.
 pub fn tide_rate(
   station : Station,
