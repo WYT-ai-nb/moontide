@@ -1,3 +1,4 @@
+///|
 /// A tide station: location, datum, harmonic components, and data provenance.
 pub struct Station {
   id : String
@@ -9,13 +10,19 @@ pub struct Station {
   source : String
 } derive(Debug)
 
-fn harmonic_of(name : String, amplitude : Double, phase_lag : Double) -> Harmonic {
+///|
+fn harmonic_of(
+  name : String,
+  amplitude : Double,
+  phase_lag : Double,
+) -> Harmonic {
   match find_constituent(name) {
-    Some(c) => ({ constituent: c, amplitude, phase_lag })
+    Some(c) => { constituent: c, amplitude, phase_lag, }
     None => abort("unknown constituent: \{name}")
   }
 }
 
+///|
 /// Stations bundled with MoonTide. Their constants are illustrative demo values.
 pub fn builtin_stations() -> Array[Station] {
   [
@@ -65,6 +72,7 @@ pub fn builtin_stations() -> Array[Station] {
   ]
 }
 
+///|
 /// Find a built-in station by id (case-insensitive).
 pub fn find_station(id : String) -> Station? {
   let wanted = id.to_lower()
@@ -76,26 +84,32 @@ pub fn find_station(id : String) -> Station? {
   None
 }
 
+///|
 pub fn station_id(station : Station) -> String {
   station.id
 }
 
+///|
 pub fn station_name(station : Station) -> String {
   station.name
 }
 
+///|
 pub fn station_lat(station : Station) -> Double {
   station.lat
 }
 
+///|
 pub fn station_lon(station : Station) -> Double {
   station.lon
 }
 
+///|
 pub fn station_source(station : Station) -> String {
   station.source
 }
 
+///|
 fn json_string(value : Json?) -> String? {
   match value {
     Some(Json::String(s)) => Some(s)
@@ -103,6 +117,7 @@ fn json_string(value : Json?) -> String? {
   }
 }
 
+///|
 fn json_number(value : Json?) -> Double? {
   match value {
     Some(Json::Number(n, ..)) => Some(n)
@@ -110,6 +125,7 @@ fn json_number(value : Json?) -> Double? {
   }
 }
 
+///|
 /// Parse a station from MoonTide's JSON format.
 pub fn station_from_json(root : Json) -> Station? {
   let object = match root {
@@ -160,15 +176,14 @@ pub fn station_from_json(root : Json) -> Station? {
       Some(v) => v
       None => return None
     }
-    components.push({ constituent: c, amplitude, phase_lag: phase })
+    components.push({ constituent: c, amplitude, phase_lag: phase, })
   }
-  Some({ id, name, lat, lon, datum, components, source })
+  Some({ id, name, lat, lon, datum, components, source, })
 }
 
+///|
 /// Parse a station file containing a single JSON object.
 pub fn parse_station_file(content : String) -> Station? {
-  let json = try @json.parse(content) catch {
-    _ => return None
-  }
+  let json = @json.parse(content) catch { _ => return None }
   station_from_json(json)
 }

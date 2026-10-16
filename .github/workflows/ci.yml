@@ -5,28 +5,42 @@ on:
   pull_request:
 
 jobs:
-  build-test-run:
+  check-build-test-validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup MoonBit
-        uses: hustcer/setup-moonbit@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
 
-      - name: Show toolchain
+      - name: Verify toolchain
         run: moon version --all
 
       - name: Check
-        run: moon check
-
-      - name: Test
-        run: moon test
+        run: moon check --target wasm-gc
 
       - name: Build
-        run: moon build
+        run: moon build --target wasm-gc
+
+      - name: Test
+        run: moon test --target wasm-gc
 
       - name: Run demo
-        run: moon run cmd/moontide -- predict --station demo --date 2026-10-12 --tz 8 --hours 24
+        run: |
+          moon run cmd/moontide --target wasm-gc -- predict \
+            --station demo \
+            --date 2026-10-12 \
+            --tz 8 \
+            --hours 24
+
+      - name: Validate against NOAA 8518750
+        run: |
+          moon run cmd/moontide --target wasm-gc -- validate-reference \
+            --metadata validation/noaa-8518750/metadata.json \
+            --harcon validation/noaa-8518750/harcon.json \
+            --datums validation/noaa-8518750/datums.json \
+            --predictions validation/noaa-8518750/predictions-20261012-20261015.json \
+            --tolerance 0.12

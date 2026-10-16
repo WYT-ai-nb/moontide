@@ -1,3 +1,4 @@
+///|
 /// The result of a tide prediction for a station over a time window.
 pub struct Prediction {
   station : Station
@@ -14,17 +15,22 @@ pub struct Prediction {
   activities : Array[Activity]
 } derive(Debug)
 
+///|
 /// Rough mean tidal range from the dominant constituents.
 pub fn mean_tidal_range(station : Station) -> Double {
   let mut total = 0.0
   for hc in station.components {
-    if hc.constituent.name == "M2" || hc.constituent.name == "S2" || hc.constituent.name == "K1" || hc.constituent.name == "O1" {
+    if hc.constituent.name == "M2" ||
+      hc.constituent.name == "S2" ||
+      hc.constituent.name == "K1" ||
+      hc.constituent.name == "O1" {
       total = total + hc.amplitude
     }
   }
   total * 2.0
 }
 
+///|
 fn classify_spring_neap(tidal_range : Double, mean_range : Double) -> String {
   if mean_range <= 0.0 {
     return "中潮"
@@ -39,6 +45,7 @@ fn classify_spring_neap(tidal_range : Double, mean_range : Double) -> String {
   }
 }
 
+///|
 /// Predict tides for a station starting at a local clock moment.
 pub fn predict(
   station : Station,
@@ -48,7 +55,7 @@ pub fn predict(
 ) -> Prediction {
   let start_jd = moment_to_jd(start, tz)
   let step_hours = 1.0 / 12.0 // five minutes
-  let samples = (@math.floor(duration_hours / step_hours)).to_int() + 1
+  let samples = @math.floor(duration_hours / step_hours).to_int() + 1
   let mut min_height = tide_height(station, start_jd)
   let mut max_height = min_height
   for i = 0; i < samples; i = i + 1 {
@@ -89,6 +96,7 @@ pub fn predict(
   }
 }
 
+///|
 /// Convenience wrapper: parse a local date string and predict.
 pub fn predict_on(
   station : Station,

@@ -1,3 +1,4 @@
+///|
 /// Nodal-correction family for a constituent.
 pub enum NodalKind {
   Solar
@@ -6,27 +7,29 @@ pub enum NodalKind {
   LuniSolarDiurnal
 } derive(Eq, Debug)
 
+///|
 /// A tidal harmonic constituent expressed with Doodson numbers.
 pub struct Constituent {
   name : String
-  d1 : Int
-  d2 : Int
-  d3 : Int
-  d4 : Int
-  d5 : Int
-  d6 : Int
+  d1 : Int32
+  d2 : Int32
+  d3 : Int32
+  d4 : Int32
+  d5 : Int32
+  d6 : Int32
   speed : Double
   nodal_kind : NodalKind
 } derive(Debug)
 
+///|
 fn constituent(
   name : String,
-  d1 : Int,
-  d2 : Int,
-  d3 : Int,
-  d4 : Int,
-  d5 : Int,
-  d6 : Int,
+  d1 : Int32,
+  d2 : Int32,
+  d3 : Int32,
+  d4 : Int32,
+  d5 : Int32,
+  d6 : Int32,
   nodal_kind : NodalKind,
 ) -> Constituent {
   let speed = d1.to_double() * 14.4920521 +
@@ -35,9 +38,10 @@ fn constituent(
     d4.to_double() * 0.00464183 +
     d5.to_double() * 0.00220641 +
     d6.to_double() * 0.00000196
-  { name, d1, d2, d3, d4, d5, d6, speed, nodal_kind }
+  { name, d1, d2, d3, d4, d5, d6, speed, nodal_kind, }
 }
 
+///|
 /// The standard set of constituents supported by MoonTide.
 pub fn standard_constituents() -> Array[Constituent] {
   [
@@ -55,6 +59,7 @@ pub fn standard_constituents() -> Array[Constituent] {
   ]
 }
 
+///|
 /// Find a constituent by name (case-insensitive).
 pub fn find_constituent(name : String) -> Constituent? {
   let wanted = name.to_upper()

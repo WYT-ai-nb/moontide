@@ -6,3 +6,4 @@ _build/
 *.o
 *.out
 *.log
+trace.json

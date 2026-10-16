@@ -1,3 +1,4 @@
+///|
 fn csv_cell(value : String) -> String {
   if value.contains(",") || value.contains("\"") || value.contains("\n") {
     "\"\{value.replace_all(old="\"", new="\"\"")}\""
@@ -6,31 +7,30 @@ fn csv_cell(value : String) -> String {
   }
 }
 
+///|
 fn ics_escape(value : String) -> String {
-  value.replace_all(old="\\", new="\\\\").replace_all(old=";", new="\\;").replace_all(old=",", new="\\,").replace_all(old="\n", new="\\n")
+  value
+  .replace_all(old="\\", new="\\\\")
+  .replace_all(old=";", new="\\;")
+  .replace_all(old=",", new="\\,")
+  .replace_all(old="\n", new="\\n")
 }
 
+///|
 fn ics_datetime(jd : Double, tz : Double) -> String {
   let (y, m, d, h) = jd_to_calendar(jd + tz / 24.0)
   let hh = @math.floor(h).to_int()
   let mm = @math.floor((h - hh.to_double()) * 60.0).to_int()
-  let ss = @math.floor((((h - hh.to_double()) * 60.0) - mm.to_double()) * 60.0).to_int()
-  let zz = if tz < 0.0 {
-    "-"
-  } else {
-    "+"
-  }
-  let abs_tz = if tz < 0.0 {
-    -tz
-  } else {
-    tz
-  }
+  let ss = @math.floor(((h - hh.to_double()) * 60.0 - mm.to_double()) * 60.0).to_int()
+  let zz = if tz < 0.0 { "-" } else { "+" }
+  let abs_tz = if tz < 0.0 { -tz } else { tz }
   let th = @math.floor(abs_tz).to_int()
   let tm = @math.round((abs_tz - th.to_double()) * 60.0).to_int()
   "\{y}\{pad2_export(m)}\{pad2_export(d)}T\{pad2_export(hh)}\{pad2_export(mm)}\{pad2_export(ss)}\{zz}\{pad2_export(th)}\{pad2_export(tm)}"
 }
 
-fn pad2_export(n : Int) -> String {
+///|
+fn pad2_export(n : Int32) -> String {
   if n < 10 {
     "0\{n}"
   } else {
@@ -38,6 +38,7 @@ fn pad2_export(n : Int) -> String {
   }
 }
 
+///|
 /// Export a sampled tide curve as CSV.
 pub fn samples_to_csv(samples : Array[TideSample], tz : Double) -> String {
   let lines = Array(capacity=samples.length() + 1)
@@ -50,16 +51,13 @@ pub fn samples_to_csv(samples : Array[TideSample], tz : Double) -> String {
   lines.join("\n")
 }
 
+///|
 /// Export high/low water events as CSV.
 pub fn extremes_to_csv(extremes : Array[TideExtreme], tz : Double) -> String {
   let lines = Array(capacity=extremes.length() + 1)
   lines.push("time,kind,height_m")
   for extreme in extremes {
-    let kind = if extreme.kind == ExtremeKind::High {
-      "high"
-    } else {
-      "low"
-    }
+    let kind = if extreme.kind == ExtremeKind::High { "high" } else { "low" }
     lines.push(
       "\{csv_cell(format_local_datetime(extreme.time_jd, tz))},\{kind},\{format_meters(extreme.height)}",
     )
@@ -67,8 +65,13 @@ pub fn extremes_to_csv(extremes : Array[TideExtreme], tz : Double) -> String {
   lines.join("\n")
 }
 
+///|
 /// Export high/low water events as an iCalendar feed.
-pub fn extremes_to_ics(station : Station, extremes : Array[TideExtreme], tz : Double) -> String {
+pub fn extremes_to_ics(
+  station : Station,
+  extremes : Array[TideExtreme],
+  tz : Double,
+) -> String {
   let lines = Array(capacity=extremes.length() * 8 + 10)
   lines.push("BEGIN:VCALENDAR")
   lines.push("VERSION:2.0")
@@ -87,13 +90,16 @@ pub fn extremes_to_ics(station : Station, extremes : Array[TideExtreme], tz : Do
     lines.push("DTSTAMP:\{ics_datetime(extremes[0].time_jd, tz)}")
     lines.push("DTSTART:\{ics_datetime(extreme.time_jd, tz)}")
     lines.push("SUMMARY:\{ics_escape("\{station.name} \{kind}")}")
-    lines.push("DESCRIPTION:\{ics_escape("潮高 \{format_meters(extreme.height)} m")}")
+    lines.push(
+      "DESCRIPTION:\{ics_escape("潮高 \{format_meters(extreme.height)} m")}",
+    )
     lines.push("END:VEVENT")
   }
   lines.push("END:VCALENDAR")
   lines.join("\r\n")
 }
 
+///|
 /// Render one activity plan as Markdown.
 pub fn plan_to_markdown(plan : ActivityPlan, tz : Double) -> String {
   let lines = Array(capacity=plan.windows.length() * 4 + 5)
@@ -114,6 +120,7 @@ pub fn plan_to_markdown(plan : ActivityPlan, tz : Double) -> String {
   lines.join("\n")
 }
 
+///|
 /// Render all activity plans as Markdown.
 pub fn plans_to_markdown(plans : Array[ActivityPlan], tz : Double) -> String {
   let sections = Array(capacity=plans.length())
@@ -123,6 +130,7 @@ pub fn plans_to_markdown(plans : Array[ActivityPlan], tz : Double) -> String {
   sections.join("\n\n")
 }
 
+///|
 /// Render descriptive statistics as Markdown.
 pub fn stats_to_markdown(stats : TideStats, coefficient : Double) -> String {
   let lines = Array(capacity=12)
@@ -132,13 +140,18 @@ pub fn stats_to_markdown(stats : TideStats, coefficient : Double) -> String {
   lines.push("- 最高潮高：\{format_meters(stats.max_height)} m")
   lines.push("- 平均潮高：\{format_meters(stats.mean_height)} m")
   lines.push("- 潮差：\{format_meters(stats.range)} m")
-  lines.push("- 最大涨潮速率：\{format_meters(stats.max_flood_rate)} m/h")
+  lines.push(
+    "- 最大涨潮速率：\{format_meters(stats.max_flood_rate)} m/h",
+  )
   lines.push("- 最大落潮速率：\{format_meters(stats.max_ebb_rate)} m/h")
-  lines.push("- 涨潮时间占比：\{format_meters(stats.rising_fraction * 100.0)}%")
+  lines.push(
+    "- 涨潮时间占比：\{format_meters(stats.rising_fraction * 100.0)}%",
+  )
   lines.push("- 潮汐系数：\{format_meters(coefficient)}")
   lines.join("\n")
 }
 
+///|
 /// Render a compact station inventory as Markdown.
 pub fn stations_to_markdown(stations : Array[Station]) -> String {
   let lines = Array(capacity=stations.length() * 4 + 4)
@@ -154,6 +167,7 @@ pub fn stations_to_markdown(stations : Array[Station]) -> String {
   lines.join("\n")
 }
 
+///|
 /// Render a validation report as Markdown.
 pub fn validation_to_markdown(issues : Array[ValidationIssue]) -> String {
   let lines = Array(capacity=issues.length() * 2 + 5)

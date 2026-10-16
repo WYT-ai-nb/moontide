@@ -1,10 +1,15 @@
+///|
 /// Approximate solar declination in degrees for a day of year (1..365/366).
-pub fn solar_declination(day_of_year : Int) -> Double {
+pub fn solar_declination(day_of_year : Int32) -> Double {
   -23.44 * @math.cos(to_radians(360.0 / 365.0 * (day_of_year + 10).to_double()))
 }
 
+///|
 /// Simplified NOAA sunrise/sunset in local solar hours, or `None` for polar day/night.
-pub fn sunrise_sunset(lat_degrees : Double, day_of_year : Int) -> (Double, Double)? {
+pub fn sunrise_sunset(
+  lat_degrees : Double,
+  day_of_year : Int32,
+) -> (Double, Double)? {
   let lat = to_radians(lat_degrees)
   let decl = to_radians(solar_declination(day_of_year))
   let zenith = to_radians(90.833)

@@ -2,8 +2,5 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/math",
   "moonbitlang/core/string",
-}
-
-import {
   "moonbitlang/core/test",
-} for "test"
+}

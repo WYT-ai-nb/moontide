@@ -1,3 +1,4 @@
+///|
 /// A recommended activity with an explanation and one or more time windows.
 pub struct Activity {
   title : String
@@ -5,16 +6,24 @@ pub struct Activity {
   windows : Array[String]
 } derive(Debug)
 
+///|
 fn in_daylight(local_hour : Double, sunrise : Double, sunset : Double) -> Bool {
   local_hour >= sunrise && local_hour <= sunset
 }
 
-fn window(low_jd : Double, before : Double, after : Double, tz : Double) -> String {
+///|
+fn window(
+  low_jd : Double,
+  before : Double,
+  after : Double,
+  tz : Double,
+) -> String {
   let start = low_jd - before / 24.0
   let end = low_jd + after / 24.0
   "\{format_local_time(start, tz)} - \{format_local_time(end, tz)}"
 }
 
+///|
 /// Build activity suggestions from tidal extremes and the daylight window.
 pub fn recommend(
   extremes : Array[TideExtreme],
@@ -60,8 +69,8 @@ pub fn recommend(
   }
 
   [
-    { title: "赶海", detail: beach, windows: beach_windows },
-    { title: "钓鱼", detail: fishing, windows: fishing_windows },
-    { title: "观鸟", detail: birds, windows: bird_windows },
+    { title: "赶海", detail: beach, windows: beach_windows, },
+    { title: "钓鱼", detail: fishing, windows: fishing_windows, },
+    { title: "观鸟", detail: birds, windows: bird_windows, },
   ]
 }

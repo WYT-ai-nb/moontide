@@ -1,3 +1,4 @@
+///|
 /// The instantaneous direction of the tide.
 pub enum TideState {
   Rising
@@ -6,6 +7,7 @@ pub enum TideState {
   LowSlack
 } derive(Eq, Debug)
 
+///|
 /// One sampled point on a tide curve.
 pub struct TideSample {
   jd : Double
@@ -14,6 +16,7 @@ pub struct TideSample {
   state : TideState
 } derive(Debug)
 
+///|
 /// Aggregate information about a sampled tide series.
 pub struct TideStats {
   min_height : Double
@@ -25,6 +28,7 @@ pub struct TideStats {
   rising_fraction : Double
 } derive(Debug)
 
+///|
 /// A closed interval on the tide timeline.
 pub struct TideWindow {
   start_jd : Double
@@ -32,6 +36,7 @@ pub struct TideWindow {
   label : String
 } derive(Debug)
 
+///|
 fn abs_double(value : Double) -> Double {
   if value < 0.0 {
     -value
@@ -40,20 +45,26 @@ fn abs_double(value : Double) -> Double {
   }
 }
 
+///|
 /// Approximate rate of change in meters per hour.
-pub fn tide_rate(station : Station, jd : Double, delta_hours : Double) -> Double {
-  let delta = if delta_hours <= 0.0 {
-    0.05
-  } else {
-    delta_hours
-  }
+pub fn tide_rate(
+  station : Station,
+  jd : Double,
+  delta_hours : Double,
+) -> Double {
+  let delta = if delta_hours <= 0.0 { 0.05 } else { delta_hours }
   let before = tide_height(station, jd - delta / 24.0)
   let after = tide_height(station, jd + delta / 24.0)
   (after - before) / (2.0 * delta)
 }
 
+///|
 /// Classify a tide point by its local rate and height.
-pub fn tide_state(station : Station, jd : Double, tolerance : Double) -> TideState {
+pub fn tide_state(
+  station : Station,
+  jd : Double,
+  tolerance : Double,
+) -> TideState {
   let rate = tide_rate(station, jd, 0.05)
   if rate > tolerance {
     Rising
@@ -69,6 +80,7 @@ pub fn tide_state(station : Station, jd : Double, tolerance : Double) -> TideSta
   }
 }
 
+///|
 /// Sample a station over a time window.
 pub fn sample_series(
   station : Station,
@@ -76,27 +88,22 @@ pub fn sample_series(
   duration_hours : Double,
   step_hours : Double,
 ) -> Array[TideSample] {
-  let step = if step_hours <= 0.0 {
-    1.0
-  } else {
-    step_hours
-  }
-  let count = (@math.floor(duration_hours / step)).to_int() + 1
+  let step = if step_hours <= 0.0 { 1.0 } else { step_hours }
+  let count = @math.floor(duration_hours / step).to_int() + 1
   let samples = Array(capacity=count)
   for i = 0; i < count; i = i + 1 {
     let jd = start_jd + i.to_double() * step / 24.0
-    samples.push(
-      {
-        jd,
-        height: tide_height(station, jd),
-        rate: tide_rate(station, jd, 0.05),
-        state: tide_state(station, jd, 0.005),
-      },
-    )
+    samples.push({
+      jd,
+      height: tide_height(station, jd),
+      rate: tide_rate(station, jd, 0.05),
+      state: tide_state(station, jd, 0.005),
+    })
   }
   samples
 }
 
+///|
 /// Compute descriptive statistics from a sampled series.
 pub fn compute_stats(samples : Array[TideSample]) -> TideStats {
   if samples.is_empty() {
@@ -145,6 +152,7 @@ pub fn compute_stats(samples : Array[TideSample]) -> TideStats {
   }
 }
 
+///|
 /// Find the next high or low water after `jd`.
 pub fn find_next_extreme(
   station : Station,
@@ -152,11 +160,7 @@ pub fn find_next_extreme(
   horizon_hours : Double,
   step_hours : Double,
 ) -> TideExtreme? {
-  let step = if step_hours <= 0.0 {
-    0.1
-  } else {
-    step_hours
-  }
+  let step = if step_hours <= 0.0 { 0.1 } else { step_hours }
   let extremes = find_extremes(station, jd, horizon_hours, step)
   if extremes.is_empty() {
     None
@@ -165,8 +169,14 @@ pub fn find_next_extreme(
   }
 }
 
+///|
 /// Build a time window around an extreme.
-pub fn window_around(extreme : TideExtreme, before_hours : Double, after_hours : Double, label : String) -> TideWindow {
+pub fn window_around(
+  extreme : TideExtreme,
+  before_hours : Double,
+  after_hours : Double,
+  label : String,
+) -> TideWindow {
   {
     start_jd: extreme.time_jd - before_hours / 24.0,
     end_jd: extreme.time_jd + after_hours / 24.0,
@@ -174,11 +184,13 @@ pub fn window_around(extreme : TideExtreme, before_hours : Double, after_hours :
   }
 }
 
+///|
 /// Test whether a window contains a Julian day.
 pub fn window_contains(window : TideWindow, jd : Double) -> Bool {
   jd >= window.start_jd && jd <= window.end_jd
 }
 
+///|
 /// Merge overlapping or touching windows.
 pub fn merge_windows(windows : Array[TideWindow]) -> Array[TideWindow] {
   if windows.is_empty() {
@@ -215,28 +227,43 @@ pub fn merge_windows(windows : Array[TideWindow]) -> Array[TideWindow] {
   merged
 }
 
+///|
 /// Produce windows around every low water in a series.
-pub fn low_water_windows(extremes : Array[TideExtreme], before_hours : Double, after_hours : Double) -> Array[TideWindow] {
+pub fn low_water_windows(
+  extremes : Array[TideExtreme],
+  before_hours : Double,
+  after_hours : Double,
+) -> Array[TideWindow] {
   let windows = Array(capacity=extremes.length())
   for extreme in extremes {
     if extreme.kind == ExtremeKind::Low {
-      windows.push(window_around(extreme, before_hours, after_hours, "低潮窗口"))
+      windows.push(
+        window_around(extreme, before_hours, after_hours, "低潮窗口"),
+      )
     }
   }
   merge_windows(windows)
 }
 
+///|
 /// Produce windows around every high water in a series.
-pub fn high_water_windows(extremes : Array[TideExtreme], before_hours : Double, after_hours : Double) -> Array[TideWindow] {
+pub fn high_water_windows(
+  extremes : Array[TideExtreme],
+  before_hours : Double,
+  after_hours : Double,
+) -> Array[TideWindow] {
   let windows = Array(capacity=extremes.length())
   for extreme in extremes {
     if extreme.kind == ExtremeKind::High {
-      windows.push(window_around(extreme, before_hours, after_hours, "高潮窗口"))
+      windows.push(
+        window_around(extreme, before_hours, after_hours, "高潮窗口"),
+      )
     }
   }
   merge_windows(windows)
 }
 
+///|
 /// Return the dominant state in a sampled series.
 pub fn dominant_state(samples : Array[TideSample]) -> TideState {
   let mut rising = 0
@@ -262,6 +289,7 @@ pub fn dominant_state(samples : Array[TideSample]) -> TideState {
   }
 }
 
+///|
 /// Convert the dominant state to a human-readable label.
 pub fn state_label(state : TideState) -> String {
   match state {
@@ -272,6 +300,7 @@ pub fn state_label(state : TideState) -> String {
   }
 }
 
+///|
 /// Compute the tide coefficient using the range relative to the mean range.
 pub fn tide_coefficient(tidal_range : Double, mean_range : Double) -> Double {
   if mean_range <= 0.0 {
@@ -281,11 +310,13 @@ pub fn tide_coefficient(tidal_range : Double, mean_range : Double) -> Double {
   }
 }
 
+///|
 /// Return true when a range is above the spring threshold.
 pub fn is_spring(tidal_range : Double, mean_range : Double) -> Bool {
   tide_coefficient(tidal_range, mean_range) >= 110.0
 }
 
+///|
 /// Return true when a range is below the neap threshold.
 pub fn is_neap(tidal_range : Double, mean_range : Double) -> Bool {
   tide_coefficient(tidal_range, mean_range) <= 70.0

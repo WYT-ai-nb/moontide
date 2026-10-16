@@ -1,12 +1,18 @@
+///|
 fn close(a : Double, b : Double, eps : Double) -> Bool {
   let d = a - b
   (if d < 0.0 { -d } else { d }) < eps
 }
 
+///|
 test "julian day J2000 epoch" {
-  @test.assert_eq(close(julian_day_utc(2000, 1, 1, 12.0), 2451545.0, 1.0e-6), true)
+  @test.assert_eq(
+    close(julian_day_utc(2000, 1, 1, 12.0), 2451545.0, 1.0e-6),
+    true,
+  )
 }
 
+///|
 test "julian day calendar roundtrip" {
   let (y, m, d, h) = jd_to_calendar(2451545.0)
   @test.assert_eq(y, 2000)
@@ -15,6 +21,7 @@ test "julian day calendar roundtrip" {
   @test.assert_eq(close(h, 12.0, 1.0e-6), true)
 }
 
+///|
 test "fundamental arguments at J2000" {
   let a = astro_at(2451545.0)
   @test.assert_eq(close(a.s, 218.3164477, 1.0e-4), true)
@@ -24,6 +31,7 @@ test "fundamental arguments at J2000" {
   @test.assert_eq(close(a.pp, 282.93734098, 1.0e-4), true)
 }
 
+///|
 test "constituent speeds" {
   let m2 = find_constituent("M2").unwrap()
   let s2 = find_constituent("S2").unwrap()
@@ -35,6 +43,7 @@ test "constituent speeds" {
   @test.assert_eq(close(o1.speed, 13.9430356, 1.0e-6), true)
 }
 
+///|
 test "solar constituents have no nodal correction" {
   let s2 = find_constituent("S2").unwrap()
   let (f, u) = nodal_correction(s2, 125.0)
@@ -42,11 +51,13 @@ test "solar constituents have no nodal correction" {
   @test.assert_eq(u, 0.0)
 }
 
+///|
 test "solar declination peaks at solstices" {
   @test.assert_eq(close(solar_declination(172), 23.44, 0.4), true)
   @test.assert_eq(close(solar_declination(355), -23.44, 0.4), true)
 }
 
+///|
 test "sunrise before sunset" {
   match sunrise_sunset(36.0, 80) {
     Some((rise, set)) => {
@@ -57,11 +68,13 @@ test "sunrise before sunset" {
   }
 }
 
+///|
 test "day of year handles leap years" {
   @test.assert_eq(day_of_year(2024, 2, 29), 60)
   @test.assert_eq(day_of_year(2023, 3, 1), 60)
 }
 
+///|
 test "parse local datetime" {
   match parse_local_datetime("2026-10-12 08:30") {
     Some(m) => {
@@ -75,6 +88,7 @@ test "parse local datetime" {
   @test.assert_eq(parse_local_datetime("not-a-date"), None)
 }
 
+///|
 test "station json roundtrip" {
   let json = "{\"id\":\"test\",\"name\":\"测试港\",\"lat\":30.0,\"lon\":122.0,\"datum\":0.0,\"source\":\"test\",\"components\":[{\"name\":\"M2\",\"amplitude\":1.0,\"phase\":300.0}]}"
   match parse_station_file(json) {
@@ -87,11 +101,13 @@ test "station json roundtrip" {
   }
 }
 
+///|
 test "mean tidal range uses dominant constituents" {
   let demo = find_station("demo").unwrap()
   @test.assert_eq(close(mean_tidal_range(demo), 4.06, 1.0e-6), true)
 }
 
+///|
 test "tide height stays bounded" {
   let demo = find_station("demo").unwrap()
   let start = julian_day_utc(2026, 10, 12, 0.0)
@@ -101,9 +117,15 @@ test "tide height stays bounded" {
   }
 }
 
+///|
 test "prediction finds high and low water" {
   let demo = find_station("demo").unwrap()
-  let p = predict(demo, { year: 2026, month: 10, day: 12, local_hour: 0.0 }, 8.0, 48.0)
+  let p = predict(
+    demo,
+    { year: 2026, month: 10, day: 12, local_hour: 0.0, },
+    8.0,
+    48.0,
+  )
   @test.assert_eq(p.extremes.is_empty(), false)
   let has_high = p.extremes.any(e => e.kind == ExtremeKind::High)
   let has_low = p.extremes.any(e => e.kind == ExtremeKind::Low)
@@ -113,15 +135,22 @@ test "prediction finds high and low water" {
   @test.assert_eq(p.tidal_range > 0.0, true)
 }
 
+///|
 test "markdown report renders" {
   let demo = find_station("demo").unwrap()
-  let p = predict(demo, { year: 2026, month: 10, day: 12, local_hour: 0.0 }, 8.0, 24.0)
+  let p = predict(
+    demo,
+    { year: 2026, month: 10, day: 12, local_hour: 0.0, },
+    8.0,
+    24.0,
+  )
   let text = render_report(p)
   @test.assert_eq(text.contains("MoonTide"), true)
   @test.assert_eq(text.contains("示例港"), true)
   @test.assert_eq(text.contains("高低潮"), true)
 }
 
+///|
 test "tide rate changes sign across the curve" {
   let demo = find_station("demo").unwrap()
   let start = julian_day_utc(2026, 10, 12, 0.0)
@@ -130,6 +159,7 @@ test "tide rate changes sign across the curve" {
   @test.assert_eq(close(first - later, 0.0, 1.0e-12), false)
 }
 
+///|
 test "sample series and statistics" {
   let demo = find_station("demo").unwrap()
   let start = julian_day_utc(2026, 10, 12, 0.0)
@@ -140,6 +170,7 @@ test "sample series and statistics" {
   @test.assert_eq(stats.max_flood_rate >= stats.max_ebb_rate, true)
 }
 
+///|
 test "find next extreme returns a result" {
   let demo = find_station("demo").unwrap()
   let start = julian_day_utc(2026, 10, 12, 0.0)
@@ -149,21 +180,24 @@ test "find next extreme returns a result" {
   }
 }
 
+///|
 test "merge windows combines overlap" {
-  let a = { start_jd: 1.0, end_jd: 2.0, label: "a" }
-  let b = { start_jd: 1.5, end_jd: 3.0, label: "b" }
-  let c = { start_jd: 4.0, end_jd: 5.0, label: "c" }
+  let a = { start_jd: 1.0, end_jd: 2.0, label: "a", }
+  let b = { start_jd: 1.5, end_jd: 3.0, label: "b", }
+  let c = { start_jd: 4.0, end_jd: 5.0, label: "c", }
   let merged = merge_windows([a, b, c])
   @test.assert_eq(merged.length(), 2)
   @test.assert_eq(close(merged[0].end_jd, 3.0, 1.0e-9), true)
 }
 
+///|
 test "station search finds a nearby port" {
   let nearest = nearest_station(36.0, 120.0).unwrap()
   @test.assert_eq(nearest.id, "demo")
   @test.assert_eq(distance_km(36.0, 120.0, 36.0, 120.0), 0.0)
 }
 
+///|
 test "station validation finds missing core constituents" {
   let station = {
     id: "minimal",
@@ -179,6 +213,7 @@ test "station validation finds missing core constituents" {
   @test.assert_eq(issues.any(issue => issue.field == "S2"), true)
 }
 
+///|
 test "csv export includes a header" {
   let demo = find_station("demo").unwrap()
   let start = julian_day_utc(2026, 10, 12, 0.0)
@@ -187,17 +222,29 @@ test "csv export includes a header" {
   @test.assert_eq(text.contains("time,height_m"), true)
 }
 
+///|
 test "ics export includes calendar events" {
   let demo = find_station("demo").unwrap()
-  let p = predict(demo, { year: 2026, month: 10, day: 12, local_hour: 0.0 }, 8.0, 24.0)
+  let p = predict(
+    demo,
+    { year: 2026, month: 10, day: 12, local_hour: 0.0, },
+    8.0,
+    24.0,
+  )
   let text = extremes_to_ics(p.station, p.extremes, p.tz)
   @test.assert_eq(text.contains("BEGIN:VCALENDAR"), true)
   @test.assert_eq(text.contains("BEGIN:VEVENT"), true)
 }
 
+///|
 test "plans expose ranked activity windows" {
   let demo = find_station("demo").unwrap()
-  let p = predict(demo, { year: 2026, month: 10, day: 12, local_hour: 0.0 }, 8.0, 48.0)
+  let p = predict(
+    demo,
+    { year: 2026, month: 10, day: 12, local_hour: 0.0, },
+    8.0,
+    48.0,
+  )
   let plans = plans_for(p)
   @test.assert_eq(plans.length(), 3)
   @test.assert_eq(plans[0].activity, "赶海")

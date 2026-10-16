@@ -1,6 +1,6 @@
 name = "WYT-ai-nb/moontide"
 
-version = "0.1.0"
+version = "0.2.0"
 
 readme = "README.md"
 
@@ -12,4 +12,8 @@ keywords = [ "tide", "ocean", "astronomy", "harmonic-analysis", "coastal" ]
 
 preferred_target = "native"
 
-description = "Local-first tidal prediction for coastal activities, written in MoonBit."
+description = "Local-first tidal prediction with NOAA station validation, written in MoonBit."
+
+import {
+  "moonbitlang/x@0.5.5",
+}

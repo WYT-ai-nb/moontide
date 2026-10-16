@@ -1,0 +1,13 @@
+{
+  "units": "meters",
+  "datums": [
+    {
+      "name": "MSL",
+      "value": 1.785
+    },
+    {
+      "name": "MLLW",
+      "value": 1.002
+    }
+  ]
+}
